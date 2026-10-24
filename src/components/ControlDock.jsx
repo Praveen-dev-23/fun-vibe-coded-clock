@@ -1,5 +1,5 @@
 import React from 'react';
-import { Maximize2, Minimize2, Sliders, Clock, Eye, EyeOff } from 'lucide-react';
+import { Maximize2, Minimize2, Sliders, Clock, Eye, EyeOff, Timer } from 'lucide-react';
 
 export default function ControlDock({
   theme,
@@ -13,6 +13,10 @@ export default function ControlDock({
   openSettings,
   onDockMouseEnter,
   onDockMouseLeave,
+  activeMode = 'clock',
+  setActiveMode,
+  isTimerRunning = false,
+  timerBadge = '',
 }) {
   return (
     <>
@@ -27,31 +31,61 @@ export default function ControlDock({
       {/* Bottom Floating Control Dock */}
       <nav
         className="bottom-dock"
-        aria-label="Clock controls"
+        aria-label="Clock and timer controls"
         onMouseEnter={onDockMouseEnter}
         onMouseLeave={onDockMouseLeave}
       >
-        {/* 12h / 24h Switch */}
-        <button
-          type="button"
-          className={`pill-button ${is24Hour ? 'active' : ''}`}
-          onClick={() => setIs24Hour((prev) => !prev)}
-          title="Toggle 12h/24h format (Shortcut: M)"
-          aria-label={`Switch to ${is24Hour ? '12-hour' : '24-hour'} format`}
-        >
-          <span>{is24Hour ? '24H' : '12H'}</span>
-        </button>
+        {activeMode === 'clock' ? (
+          <>
+            {/* 12h / 24h Switch */}
+            <button
+              type="button"
+              className={`pill-button ${is24Hour ? 'active' : ''}`}
+              onClick={() => setIs24Hour((prev) => !prev)}
+              title="Toggle 12h/24h format (Shortcut: M)"
+              aria-label={`Switch to ${is24Hour ? '12-hour' : '24-hour'} format`}
+            >
+              <span>{is24Hour ? '24H' : '12H'}</span>
+            </button>
 
-        {/* Seconds Toggle */}
+            {/* Seconds Toggle */}
+            <button
+              type="button"
+              className={`pill-button ${showSeconds ? 'active' : ''}`}
+              onClick={() => setShowSeconds((prev) => !prev)}
+              title="Toggle seconds (Shortcut: S)"
+              aria-label={`${showSeconds ? 'Hide' : 'Show'} seconds`}
+            >
+              {showSeconds ? <Eye size={14} /> : <EyeOff size={14} />}
+              <span>SEC</span>
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            className="pill-button"
+            onClick={() => setActiveMode('clock')}
+            title="Switch back to Clock (Shortcut: C)"
+            aria-label="Switch back to Clock"
+          >
+            <Clock size={14} />
+            <span>CLOCK</span>
+          </button>
+        )}
+
+        {/* Timer Button */}
         <button
           type="button"
-          className={`pill-button ${showSeconds ? 'active' : ''}`}
-          onClick={() => setShowSeconds((prev) => !prev)}
-          title="Toggle seconds (Shortcut: S)"
-          aria-label={`${showSeconds ? 'Hide' : 'Show'} seconds`}
+          className={`pill-button timer-dock-btn ${activeMode === 'timer' ? 'active' : ''} ${
+            isTimerRunning && activeMode !== 'timer' ? 'running' : ''
+          }`}
+          onClick={() => setActiveMode((prev) => (prev === 'clock' ? 'timer' : 'clock'))}
+          title={activeMode === 'timer' ? 'Currently in Timer mode' : 'Open Timer (Shortcut: C)'}
+          aria-label={activeMode === 'timer' ? 'Currently in Timer mode' : 'Open Timer'}
         >
-          {showSeconds ? <Eye size={14} /> : <EyeOff size={14} />}
-          <span>SEC</span>
+          <Timer size={14} className={isTimerRunning && activeMode !== 'timer' ? 'timer-icon-pulse' : ''} />
+          <span>{isTimerRunning && activeMode !== 'timer' && timerBadge ? timerBadge : 'TIMER'}</span>
+          {isTimerRunning && activeMode !== 'timer' && <span className="timer-live-badge-dot" />}
         </button>
 
         <div className="dock-divider" role="separator" />
@@ -120,3 +154,4 @@ export default function ControlDock({
     </>
   );
 }
+

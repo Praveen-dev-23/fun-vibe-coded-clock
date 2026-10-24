@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { X, Moon, Sun, Flame, Sparkles } from 'lucide-react';
+import { X, Sparkles } from 'lucide-react';
 
 export default function SettingsModal({
   isOpen,
@@ -210,6 +210,10 @@ export default function SettingsModal({
             <div className="shortcut-title">Keyboard Shortcuts</div>
             <div className="shortcut-grid">
               <div className="shortcut-item">
+                <span>Clock / Timer</span>
+                <span className="kbd">C</span>
+              </div>
+              <div className="shortcut-item">
                 <span>Fullscreen</span>
                 <span className="kbd">F</span>
               </div>
@@ -230,6 +234,10 @@ export default function SettingsModal({
                 <span className="kbd">M</span>
               </div>
               <div className="shortcut-item">
+                <span>Timer Play/Pause</span>
+                <span className="kbd">SPACE</span>
+              </div>
+              <div className="shortcut-item">
                 <span>Close Settings</span>
                 <span className="kbd">ESC</span>
               </div>
@@ -240,3 +248,4 @@ export default function SettingsModal({
     </div>
   );
 }
+

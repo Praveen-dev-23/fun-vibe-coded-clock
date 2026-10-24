@@ -312,7 +312,7 @@ html, body, #root {
 
 .control-overlay.visible {
   opacity: 1;
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 /* Top bar: Brand logo and Quick Actions */
@@ -724,6 +724,443 @@ html, body, #root {
 }
 
 /* --------------------------------------------------------------------------
+   Timer Stage & Elements
+   -------------------------------------------------------------------------- */
+.timer-main-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  z-index: 5;
+  pointer-events: auto;
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.timer-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: clamp(0.75rem, 2vh, 1.6rem);
+  padding-bottom: clamp(1.5rem, 4.5vh, 3.5rem);
+  pointer-events: auto;
+}
+
+/* Top auxiliary buttons */
+.timer-top-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 360px;
+  padding: 0 0.5rem;
+}
+
+.timer-back-btn {
+  background: var(--btn-bg);
+  border: 1px solid var(--panel-border);
+  font-size: 0.78rem;
+  padding: 0.35rem 0.75rem;
+}
+
+.timer-back-btn:hover {
+  background: var(--btn-hover);
+  color: var(--text-primary);
+}
+
+.active-sound {
+  color: var(--accent-color) !important;
+}
+
+.muted-sound {
+  color: var(--text-tertiary) !important;
+}
+
+/* Timer Ring & Center Display */
+.timer-center-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timer-ring-container {
+  position: relative;
+  width: clamp(230px, 33vh, 310px);
+  height: clamp(230px, 33vh, 310px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timer-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  overflow: visible;
+}
+
+
+.timer-ring-bg {
+  fill: none;
+  stroke: var(--panel-border);
+  opacity: 0.6;
+}
+
+.timer-ring-progress {
+  fill: none;
+  stroke: var(--accent-color);
+  transition: stroke-dashoffset 0.25s linear;
+  filter: drop-shadow(0 0 12px var(--accent-subtle));
+}
+
+.timer-display-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  z-index: 2;
+  user-select: none;
+}
+
+.timer-digits {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  font-size: clamp(3.2rem, 9vw, 4.6rem);
+  line-height: 1;
+  letter-spacing: -0.035em;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.4s ease;
+}
+
+.timer-with-hours {
+  font-size: clamp(2.4rem, 6.8vw, 3.4rem);
+}
+
+.timer-subcaption {
+  margin-top: 0.65rem;
+  font-size: 0.76rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* Time's up state */
+.timer-finished-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  animation: pulseGlow 1.8s infinite alternate ease-in-out;
+}
+
+.bell-ringing {
+  color: var(--accent-color);
+  animation: bellWobble 0.8s infinite ease-in-out;
+}
+
+@keyframes bellWobble {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-14deg); }
+  75% { transform: rotate(14deg); }
+}
+
+@keyframes pulseGlow {
+  from {
+    transform: scale(0.98);
+    filter: drop-shadow(0 0 8px var(--accent-subtle));
+  }
+  to {
+    transform: scale(1.03);
+    filter: drop-shadow(0 0 24px var(--accent-color));
+  }
+}
+
+.finished-title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--accent-color);
+}
+
+/* Quick Adjust Stepper */
+.timer-steppers {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stepper-btn {
+  background: var(--btn-bg);
+  border: 1px solid var(--panel-border);
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+  font-size: 0.76rem;
+  font-weight: 500;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.stepper-btn:hover:not(:disabled) {
+  background: var(--btn-hover);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.stepper-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Preset Chips */
+.timer-presets {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  max-width: 420px;
+}
+
+.preset-pill {
+  background: var(--btn-bg);
+  border: 1px solid var(--panel-border);
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all var(--transition-fast);
+}
+
+.preset-pill:hover {
+  background: var(--btn-hover);
+  color: var(--text-primary);
+}
+
+.preset-pill.active {
+  background: var(--panel-bg);
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  box-shadow: 0 0 14px var(--accent-subtle);
+}
+
+.preset-highlight-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent-color);
+}
+
+/* Playback Actions */
+.timer-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-top: 0.3rem;
+}
+
+.timer-btn-primary {
+  background: var(--accent-color);
+  color: #080808;
+  border: none;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.7rem 1.6rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 20px var(--accent-subtle);
+  transition: transform var(--transition-fast), filter var(--transition-fast), background var(--transition-fast);
+}
+
+[data-theme="warm-paper"] .timer-btn-primary {
+  color: #ffffff;
+}
+
+.timer-btn-primary:hover {
+  transform: scale(1.04);
+  filter: brightness(1.1);
+}
+
+.timer-btn-primary:active {
+  transform: scale(0.98);
+}
+
+.timer-btn-primary.running {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  color: var(--text-primary);
+  box-shadow: var(--panel-shadow);
+}
+
+.timer-btn-reset {
+  background: var(--btn-bg);
+  border: 1px solid var(--panel-border);
+  color: var(--text-secondary);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.timer-btn-reset:hover {
+  color: var(--text-primary);
+  background: var(--btn-hover);
+  transform: rotate(-35deg);
+}
+
+/* Control Dock Timer Button Live State */
+.timer-dock-btn.running {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+.timer-live-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--accent-color);
+  box-shadow: 0 0 8px var(--accent-color);
+  animation: pulseDot 1.4s infinite ease-in-out;
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(0.7); }
+}
+
+.timer-icon-pulse {
+  animation: pulseRotate 2s infinite linear;
+}
+
+@keyframes pulseRotate {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+/* Timer Finished Notification Toast */
+.timer-notification-toast {
+  position: absolute;
+  top: clamp(1.2rem, 3vh, 2.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--panel-bg);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--accent-color);
+  border-radius: 999px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), 0 0 20px var(--accent-subtle);
+  padding: 0.45rem 0.6rem 0.45rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  z-index: 100;
+  animation: toastSlideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes toastSlideDown {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -15px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+.toast-left {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.toast-icon-wrap {
+  color: var(--accent-color);
+  display: flex;
+  align-items: center;
+}
+
+.toast-message {
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.toast-right {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.toast-btn {
+  background: transparent;
+  border: none;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: all var(--transition-fast);
+}
+
+.toast-btn.primary {
+  background: var(--accent-color);
+  color: #080808;
+}
+
+[data-theme="warm-paper"] .toast-btn.primary {
+  color: #ffffff;
+}
+
+.toast-btn.secondary {
+  color: var(--text-secondary);
+  background: var(--btn-bg);
+}
+
+.toast-btn.secondary:hover {
+  color: var(--text-primary);
+  background: var(--btn-hover);
+}
+
+/* --------------------------------------------------------------------------
    Accessibility: Reduced Motion
    -------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
@@ -735,4 +1172,8 @@ html, body, #root {
   .time-colon {
     animation: none !important;
   }
+  .timer-ring-progress {
+    transition: none !important;
+  }
 }
+

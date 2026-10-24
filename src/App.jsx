@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useClock } from './hooks/useClock';
+import { useTimer } from './hooks/useTimer';
 import ControlDock from './components/ControlDock';
 import SettingsModal from './components/SettingsModal';
+import TimerView from './components/TimerView';
+import { Bell, ArrowRight } from 'lucide-react';
 
 const THEMES = {
   MIDNIGHT: 'midnight',
@@ -41,6 +44,9 @@ export default function App() {
     return saved !== null ? JSON.parse(saved) : true;
   });
 
+  // Mode: 'clock' | 'timer'
+  const [activeMode, setActiveMode] = useState('clock');
+
   // UI state
   const [controlsVisible, setControlsVisible] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -60,6 +66,11 @@ export default function App() {
     timezoneAbbr,
     isoString,
   } = useClock(is24Hour);
+
+  // Timer hook
+  const timer = useTimer(300);
+  const timerFormatted = timer.formatTime(timer.timeLeft);
+  const timerBadge = timerFormatted.formattedString;
 
   // Update HTML data-theme and meta theme-color
   useEffect(() => {
@@ -149,9 +160,6 @@ export default function App() {
     window.addEventListener('mousedown', handleActivity, { passive: true });
     window.addEventListener('touchstart', handleActivity, { passive: true });
 
-    // Initial timeout trigger on page load
-    resetInactivityTimer();
-
     return () => {
       window.removeEventListener('mousemove', handleActivity);
       window.removeEventListener('mousedown', handleActivity);
@@ -170,7 +178,19 @@ export default function App() {
 
       const key = e.key.toLowerCase();
 
-      if (key === 'f') {
+      if (key === 'c') {
+        e.preventDefault();
+        setActiveMode((prev) => (prev === 'clock' ? 'timer' : 'clock'));
+        resetInactivityTimer();
+      } else if (e.code === 'Space' && activeMode === 'timer') {
+        e.preventDefault();
+        timer.toggle();
+        resetInactivityTimer();
+      } else if (key === 'r' && activeMode === 'timer') {
+        e.preventDefault();
+        timer.reset();
+        resetInactivityTimer();
+      } else if (key === 'f') {
         e.preventDefault();
         toggleFullscreen();
         resetInactivityTimer();
@@ -198,7 +218,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [toggleFullscreen, resetInactivityTimer]);
+  }, [toggleFullscreen, resetInactivityTimer, activeMode, timer]);
 
   return (
     <div
@@ -213,64 +233,109 @@ export default function App() {
       {/* Ambient background glow for Amber Glow theme */}
       <div className="ambient-glow" aria-hidden="true" />
 
-      {/* Primary Full-screen Clock Display */}
-      <main className="clock-main-stage" aria-label="Current local time">
-        <div className="time-wrapper">
-          <time
-            dateTime={isoString}
-            className={`time-display weight-${fontWeight} ${
-              showSeconds ? 'time-with-seconds' : 'time-without-seconds'
-            }`}
-          >
-            {/* Hours */}
-            <span className="digit-chunk">{hours}</span>
-
-            {/* Separator */}
-            <span
-              className={`time-colon ${colonBlink ? 'colon-blinking' : ''}`}
-              aria-hidden="true"
-            >
-              :
+      {/* Timer Completion Banner when on Clock view */}
+      {timer.isCompleted && activeMode === 'clock' && (
+        <aside className="timer-notification-toast" role="alert" aria-live="assertive">
+          <div className="toast-left">
+            <span className="toast-icon-wrap">
+              <Bell size={16} />
             </span>
-
-            {/* Minutes */}
-            <span className="digit-chunk">{minutes}</span>
-
-            {/* Optional Seconds */}
-            {showSeconds && (
-              <>
-                <span
-                  className={`time-colon ${colonBlink ? 'colon-blinking' : ''}`}
-                  aria-hidden="true"
-                >
-                  :
-                </span>
-                <span className="digit-chunk seconds-chunk">{seconds}</span>
-              </>
-            )}
-          </time>
-
-          {/* AM / PM Badge in 12h mode */}
-          {!is24Hour && period && (
-            <span className="period-badge" aria-label={period}>
-              {period}
-            </span>
-          )}
-        </div>
-
-        {/* Calendar & Timezone Metadata */}
-        {showDate && (
-          <div className="clock-metadata" aria-label="Date and timezone">
-            <span className="meta-item">{weekday}</span>
-            <span className="meta-dot" aria-hidden="true" />
-            <span className="meta-item">{fullDate}</span>
-            <span className="meta-dot" aria-hidden="true" />
-            <span className="meta-item meta-timezone" title="Local system timezone">
-              {timezoneAbbr}
-            </span>
+            <span className="toast-message">Timer session completed</span>
           </div>
-        )}
-      </main>
+          <div className="toast-right">
+            <button
+              type="button"
+              className="toast-btn primary"
+              onClick={() => {
+                setActiveMode('timer');
+                timer.dismissCompleted();
+              }}
+            >
+              <span>View</span>
+              <ArrowRight size={13} />
+            </button>
+            <button
+              type="button"
+              className="toast-btn secondary"
+              onClick={timer.dismissCompleted}
+            >
+              Dismiss
+            </button>
+          </div>
+        </aside>
+      )}
+
+      {/* Main Stage: Clock OR Timer */}
+      {activeMode === 'clock' ? (
+        <main className="clock-main-stage" aria-label="Current local time">
+          <div className="time-wrapper">
+            <time
+              dateTime={isoString}
+              className={`time-display weight-${fontWeight} ${
+                showSeconds ? 'time-with-seconds' : 'time-without-seconds'
+              }`}
+            >
+              {/* Hours */}
+              <span className="digit-chunk">{hours}</span>
+
+              {/* Separator */}
+              <span
+                className={`time-colon ${colonBlink ? 'colon-blinking' : ''}`}
+                aria-hidden="true"
+              >
+                :
+              </span>
+
+              {/* Minutes */}
+              <span className="digit-chunk">{minutes}</span>
+
+              {/* Optional Seconds */}
+              {showSeconds && (
+                <>
+                  <span
+                    className={`time-colon ${colonBlink ? 'colon-blinking' : ''}`}
+                    aria-hidden="true"
+                  >
+                    :
+                  </span>
+                  <span className="digit-chunk seconds-chunk">{seconds}</span>
+                </>
+              )}
+            </time>
+
+            {/* AM / PM Badge in 12h mode */}
+            {!is24Hour && period && (
+              <span className="period-badge" aria-label={period}>
+                {period}
+              </span>
+            )}
+          </div>
+
+          {/* Calendar & Timezone Metadata */}
+          {showDate && (
+            <div className="clock-metadata" aria-label="Date and timezone">
+              <span className="meta-item">{weekday}</span>
+              <span className="meta-dot" aria-hidden="true" />
+              <span className="meta-item">{fullDate}</span>
+              <span className="meta-dot" aria-hidden="true" />
+              <span className="meta-item meta-timezone" title="Local system timezone">
+                {timezoneAbbr}
+              </span>
+            </div>
+          )}
+        </main>
+      ) : (
+        <main className="timer-main-stage" aria-label="Focus timer">
+          <TimerView
+            timer={timer}
+            fontWeight={fontWeight}
+            onReturnToClock={() => {
+              setActiveMode('clock');
+              resetInactivityTimer();
+            }}
+          />
+        </main>
+      )}
 
       {/* Floating Discreet Control Dock */}
       <div
@@ -289,6 +354,10 @@ export default function App() {
           isFullscreen={isFullscreen}
           toggleFullscreen={toggleFullscreen}
           openSettings={() => setIsSettingsOpen(true)}
+          activeMode={activeMode}
+          setActiveMode={setActiveMode}
+          isTimerRunning={timer.isRunning}
+          timerBadge={timerBadge}
           onDockMouseEnter={() => setIsHoveringDock(true)}
           onDockMouseLeave={() => {
             setIsHoveringDock(false);
@@ -320,3 +389,4 @@ export default function App() {
     </div>
   );
 }
+
