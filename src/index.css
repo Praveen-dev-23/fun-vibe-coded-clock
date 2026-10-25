@@ -368,6 +368,12 @@ html, body, #root {
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
 }
 
+.bottom-dock *,
+.top-bar *,
+.timer-stage * {
+  pointer-events: auto;
+}
+
 /* Action buttons */
 .pill-button {
   background: transparent;

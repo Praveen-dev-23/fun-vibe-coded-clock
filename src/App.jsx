@@ -51,7 +51,6 @@ export default function App() {
   const [controlsVisible, setControlsVisible] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isHoveringDock, setIsHoveringDock] = useState(false);
 
   const inactivityTimerRef = useRef(null);
 
@@ -134,21 +133,40 @@ export default function App() {
     }
   }, []);
 
+  // Refs to avoid stale closures in event listeners and timeouts
+  const isHoveringDockRef = useRef(false);
+  const isSettingsOpenRef = useRef(isSettingsOpen);
+  const activeModeRef = useRef(activeMode);
+
+  useEffect(() => {
+    isSettingsOpenRef.current = isSettingsOpen;
+  }, [isSettingsOpen]);
+
+  useEffect(() => {
+    activeModeRef.current = activeMode;
+  }, [activeMode]);
+
   // Controls auto-hide timer handler
   const resetInactivityTimer = useCallback(() => {
     setControlsVisible(true);
 
     if (inactivityTimerRef.current) {
       clearTimeout(inactivityTimerRef.current);
+      inactivityTimerRef.current = null;
     }
 
-    // Auto-hide controls after 3.2 seconds if not hovering dock and modal is closed
+    // Keep controls persistently visible when hovering dock, in settings, or in timer mode
+    if (isHoveringDockRef.current || isSettingsOpenRef.current || activeModeRef.current === 'timer') {
+      return;
+    }
+
+    // Auto-hide controls after 5 seconds of inactivity on main clock view
     inactivityTimerRef.current = setTimeout(() => {
-      if (!isSettingsOpen && !isHoveringDock) {
+      if (!isHoveringDockRef.current && !isSettingsOpenRef.current && activeModeRef.current !== 'timer') {
         setControlsVisible(false);
       }
-    }, 3200);
-  }, [isSettingsOpen, isHoveringDock]);
+    }, 5000);
+  }, []);
 
   // Activity listeners: mouse, touch, keyboard
   useEffect(() => {
@@ -358,9 +376,16 @@ export default function App() {
           setActiveMode={setActiveMode}
           isTimerRunning={timer.isRunning}
           timerBadge={timerBadge}
-          onDockMouseEnter={() => setIsHoveringDock(true)}
+          onDockMouseEnter={() => {
+            isHoveringDockRef.current = true;
+            if (inactivityTimerRef.current) {
+              clearTimeout(inactivityTimerRef.current);
+              inactivityTimerRef.current = null;
+            }
+            setControlsVisible(true);
+          }}
           onDockMouseLeave={() => {
-            setIsHoveringDock(false);
+            isHoveringDockRef.current = false;
             resetInactivityTimer();
           }}
         />
